@@ -23,18 +23,28 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const sdl_mixer = b.addStaticLibrary(.{
+        .name = "SDL_mixin", 
+        .target = target, 
+        .optimize = optimize, 
+    }); 
+
     const t = target.os_tag orelse sdl.target_info.target.os.tag;
 
     sdl.addIncludePath(.{ .path = "SDL/include" });
     sdl_ttf.addIncludePath(.{ .path = "SDL/include" });
     sdl_img.addIncludePath(.{ .path = "SDL/include" });
+    sdl_mixer.addIncludePath(.{ .path = "SDL/include" }); 
 
     sdl_ttf.addIncludePath(.{ .path = "SDL_ttf/include" });
     sdl_img.addIncludePath(.{ .path = "SDL_img/include" });
+    sdl_mixer.addIncludePath(.{ .path = "SDL_mixer" }); 
+    sdl_mixer.addIncludePath(.{ .path = "SDL_mixer/codecs" }); 
 
     sdl.linkLibC();
     sdl_ttf.linkLibC();
     sdl_img.linkLibC();
+    sdl_mixer.linkLibC(); 
 
     switch (t) {
         .windows => {
@@ -98,13 +108,17 @@ pub fn build(b: *std.Build) void {
     sdl_img.defineCMacro("LOAD_PNG", "1");
     sdl_img.linkSystemLibrary("libpng16");
 
+    sdl_mixer.addCSourceFiles(mixer_src_files, &.{});
+
     sdl.installHeadersDirectory("SDL/include", "SDL2");
     sdl_ttf.installHeader("SDL_ttf/SDL_ttf.h", "SDL2/SDL_ttf.h");
     sdl_img.installHeader("SDL_img/SDL_image.h", "SDL2/SDL_image.h");
+    sdl_mixer.installHeader("SDL_mixer/SDL_mixer.h", "SDL2/SDL_mixer.h");
 
     b.installArtifact(sdl);
     b.installArtifact(sdl_ttf);
     b.installArtifact(sdl_img);
+    b.installArtifact(sdl_mixer); 
 }
 
 const img_src_files = .{
@@ -1193,3 +1207,41 @@ const linux_config_h_vals = .{
     // .SDL_VIDEO_VITA_PVR = 0,
     // .SDL_VIDEO_VITA_PVR_OGL = 0,
 };
+
+const mixer_src_files : [] const []const u8 = &[_] [] const u8 {
+    "SDL_mixer/mixer.c",
+    "SDL_mixer/codecs/music_timidity.c",
+    "SDL_mixer/codecs/music_mpg123.c",
+    "SDL_mixer/codecs/load_voc.c",
+    "SDL_mixer/codecs/music_drmp3.c",
+    "SDL_mixer/codecs/load_aiff.c",
+    "SDL_mixer/codecs/music_drflac.c",
+    "SDL_mixer/codecs/music_xmp.c",
+    "SDL_mixer/codecs/timidity/common.c",
+    "SDL_mixer/codecs/timidity/tables.c",
+    "SDL_mixer/codecs/timidity/readmidi.c",
+    "SDL_mixer/codecs/timidity/instrum.c",
+    "SDL_mixer/codecs/timidity/resample.c",
+    "SDL_mixer/codecs/timidity/mix.c",
+    "SDL_mixer/codecs/timidity/playmidi.c",
+    "SDL_mixer/codecs/timidity/output.c",
+    "SDL_mixer/codecs/timidity/timidity.c",
+    "SDL_mixer/codecs/music_cmd.c",
+    "SDL_mixer/codecs/music_fluidsynth.c",
+    "SDL_mixer/codecs/music_flac.c",
+    "SDL_mixer/codecs/mp3utils.c",
+    "SDL_mixer/codecs/music_ogg.c",
+    "SDL_mixer/codecs/music_ogg_stb.c",
+    "SDL_mixer/codecs/native_midi/native_midi_macosx.c",
+    "SDL_mixer/codecs/native_midi/native_midi_win32.c",
+    "SDL_mixer/codecs/native_midi/native_midi_common.c",
+    "SDL_mixer/codecs/music_opus.c",
+    "SDL_mixer/codecs/music_wav.c",
+    "SDL_mixer/codecs/music_modplug.c",
+    "SDL_mixer/codecs/music_nativemidi.c",
+    "SDL_mixer/utils.c",
+    "SDL_mixer/music.c",
+    "SDL_mixer/effect_position.c",
+    "SDL_mixer/effects_internal.c",
+    "SDL_mixer/effect_stereoreverse.c",
+}; 
